@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans:beans xmlns="http://www.springframework.org/schema/mvc"
+			 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+			 xmlns:beans="http://www.springframework.org/schema/beans"
+			 xmlns:context="http://www.springframework.org/schema/context"
+			 xsi:schemaLocation="http://www.springframework.org/schema/mvc
+			 					 http://www.springframework.org/schema/mvc/spring-mvc.xsd
+			 					 http://www.springframework.org/schema/beans
+			 					 http://www.springframework.org/schema/beans/spring-beans.xsd
+			 					 http://www.springframework.org/schema/context
+			 					 http://www.springframework.org/schema/context/spring-context.xsd">			 					 
+	<annotation-driven/>
+
+	<context:component-scan base-package="com.custom.**"/>
+	
+	<beans:bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+		<beans:property name="prefix" value="/WEB-INF/views/"/>
+		<beans:property name="suffix" value=".jsp"/>
+	</beans:bean>
+	
+	<resources location="/resources/" mapping="/resources/**"/>
+
+<!--	<beans:bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+		<beans:property name="locations">
+			<beans:list>
+				<beans:value>/WEB-INF/properties/db.properties</beans:value>
+			</beans:list>
+		</beans:property>
+	</beans:bean> -->
+	
+	<!-- 기존에 윗 방법으로 db.properties를 주입시켰다 버전이 바뀌면서 레거시한 방식이 되어서 밑 방법으로 활용했다. 2022-04-14 -->
+	<!-- classpath: 의 경로는 프로젝트명/src/main/resources/ 부터 시작이다 -->
+	
+	<context:property-placeholder location="classpath:properties/db.properties"/>
+	
+	<beans:bean id="data_source" class="org.apache.commons.dbcp2.BasicDataSource">
+		<beans:property name="driverClassName" value="${db.driverClassName}"/>
+		<beans:property name="url" value="${db.url}"/>
+		<beans:property name="username" value="${db.username}"/>
+		<beans:property name="password" value="${db.password}"/>
+	</beans:bean>
+	
+	<beans:bean id="sqlSession" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<beans:property name="dataSource" ref="data_source"/>
+		<beans:property name="mapperLocations" value="classpath:mapper/*.xml"/>
+	</beans:bean>
+	
+	<beans:bean id="sqlSessionTemplate" class="org.mybatis.spring.SqlSessionTemplate">
+		<beans:constructor-arg index="0" ref="sqlSession"/>
+	</beans:bean>
+	
+	<interceptors>
+		<interceptor>
+			<mapping path="/main"/>
+			<beans:bean class="com.custom.interceptor.AutoLoginInterceptor"/>
+		</interceptor>
+		<interceptor>
+			<mapping path="/board/boardInsert"/>
+			<beans:bean class="com.custom.interceptor.LoginCheckInterceptor"/>
+		</interceptor>
+		<interceptor>
+			<mapping path="/board/boardDetailModi"/>
+			<mapping path="/board/boardDelete"/>
+			<beans:bean class="com.custom.interceptor.SessionCheckInterceptor"/>
+		</interceptor>
+	</interceptors>
+	
+	<beans:bean id="mailSender"	class="org.springframework.mail.javamail.JavaMailSenderImpl">
+		<beans:property name="host" value="smtp.gmail.com" />
+		<beans:property name="port" value="587" /><!-- 465 or 25 -->
+		<beans:property name="username" value="wowpang9705@gmail.com" />
+		<beans:property name="password" value="a01097051592" />
+		<beans:property name="defaultEncoding" value="utf-8" />
+		<beans:property name="javaMailProperties">
+			<beans:props>
+				<beans:prop key="mail.transport.protocol">smtp</beans:prop>
+				<beans:prop key="mail.smtp.auth">true</beans:prop>
+				<beans:prop key="mail.smtp.starttls.enable">true</beans:prop>
+				<beans:prop key="mail.debug">true</beans:prop>
+			</beans:props>
+		</beans:property>
+	</beans:bean>
+	
+</beans:beans>

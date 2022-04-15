@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="board">
+
+	<!-- 총 게시물 -->
+	<select id="boardCount" parameterType="String" resultType="Integer">
+		select 
+			count(distinct board_idx)
+		from
+			general_board
+		where 
+			board_del_yn = 'n'
+		<if test="searchWord != null">	
+			and 
+				replace(board_title,' ','') like replace(CONCAT('%',#{searchWord},'%'),' ','')
+		</if>
+	</select>	
+	
+	<!-- 게시물 목록 -->
+	<select id="boardList" parameterType="com.custom.paging.BoardPagingVo" resultType="com.custom.board.BoardDto">
+		select
+			r1.*
+		from
+			(
+			select 
+				board_idx,
+				board_title,
+				board_text,
+				custom_user_nick as board_writer,
+				date_format(board_mod_date, '%Y-%m-%d')AS board_mod_date,
+				board_img_path
+			from 
+				general_board gb 
+			join custom_user cu
+			on
+				gb.board_writer_idx = cu.custom_user_idx
+			where 
+				board_del_yn = 'n'
+			<if test="searchWord != null">
+				and
+					replace(board_title,' ','') like replace(CONCAT('%',#{searchWord},'%'),' ','')
+			</if> 
+			)r1
+		order by 
+			board_idx desc
+		limit #{pageStart}, #{pageEnd}
+	</select>	
+	
+	<!-- 게시물 작성 -->
+	<insert id="boardInsert" parameterType="com.custom.board.BoardDto">
+		<selectKey keyProperty="board_idx" order="BEFORE" resultType="Integer">
+			select nextval(board_seq) from dual;
+		</selectKey>
+		insert into general_board 
+		values(
+			#{board_idx},
+			#{board_title},
+			#{board_text},
+			#{board_writer_idx},
+			default,
+			default,
+			#{board_img_path, jdbcType=VARCHAR},
+			default
+		)
+	</insert>	
+	
+	<!-- 게시물 본문 보기 -->
+	<select id="boardDetail" parameterType="Integer" resultType="com.custom.board.BoardDto">
+		select 
+			board_idx,
+			custom_user_nick as board_writer,
+			board_title,
+			board_text,
+			board_img_path,
+			board_writer_idx
+		from 
+			general_board gb
+		join 
+			custom_user cu
+		on 
+			gb.board_writer_idx = cu.custom_user_idx
+		where 
+			board_idx = #{board_idx}
+	</select>	
+	
+	<!-- 게시물 수정 -->
+	<update id="boardDetailModi" parameterType="com.custom.board.BoardDto">
+		update
+			general_board
+		set 
+			board_title = #{board_title},
+			board_text = #{board_text},
+			board_mod_date = default
+			<if test="board_img_path != null">
+				, board_img_path = #{board_img_path}
+			</if>
+			<if test="board_img_path == ''">
+				, board_img_path = null
+			</if>
+		where
+			board_idx = #{board_idx}
+	</update>
+	
+	<!-- 게시물 수정에서 파일 삭제 -->	
+	<update id="fileDelete" parameterType="Integer">
+		update
+			general_board
+		set
+			board_img_path = null
+		where
+			board_idx = #{board_idx}
+	</update>	
+	
+	<!-- 게시글 삭제 -->
+	<delete id="boardDelete" parameterType="Integer">
+		delete
+		from
+			general_board
+		where
+			board_idx = #{board_idx}
+	</delete>
+</mapper>
