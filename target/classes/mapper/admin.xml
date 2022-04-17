@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="admin">
+
+	<!-- 회원 목록 -->
+	<select id="UserList" resultType="com.custom.admin.AdminDto">
+		select
+			custom_user_name,
+			custom_user_nick,
+			custom_user_email,
+			custom_user_phone,
+			custom_user_address,
+			custom_user_auth,
+			custom_user_del_yn
+		from 
+			custom_user
+	</select>
+</mapper>

@@ -39,6 +39,9 @@
 		                <a class="collapse-item" href="${path }/board/board">게시판</a>
  					</c:otherwise>
  				</c:choose>
+ 				<c:if test="${sessionScope.userAuth == 1 }">
+ 					<a class="collapse-item" href="${path }/admin/userInfo">회원정보</a>
+ 				</c:if>
             </div>
         </div>
     </li>
